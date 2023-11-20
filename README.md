@@ -1,56 +1,54 @@
-New on-going project
-
-Content
-	1. Initialize FLAN-T5 model
-	2. Load dataset
-	3. Inference without prompt
-	4. Zero shot inference
-	5. Zero shot inference (different prompt)
-	6. One shot inference
-	7. Few shot inference
-	8. Try with different LLM config
-
-Goal: Test out FLAN-T5's ability to summarize dialogues
-
-Install library
 
 
-Import Hugging Face LLM libraries
+Autoencoding models build bidirectional representations of the input sequence
+	• Model understand the full context of the token, not just the word comes before
 
+Good use case 
+(ideally tasks that benefit by bidirectional context)
+	• Sentiment analysis
+	• Named entity recognition (extract information from text)
+	• Word classification
+Example model
+	• BERT
+	• ROBERTA
 
-Load the DialogSum
-	• Dialogues dataset from the DialogSum Hugging face dataset
-	• This dataset contains 10000+ dialogues with corresponding manually labeled summaries and topics
+token in the sequence is randomly masked
 
+denoising objective
 
-Print a couple of dialogues with their baseline summaries
-
-
-Load the FLAN-T5 model, creating an instance of the AutoModelForSeqLM class with the .from_pretrained() method
-	• It is a good generalized model that can perform many tasks
-
-
-Initialize the tokenizer for the FLAN-T5 
-	• Parameter use_fast switches on the fast tokenizer
-	• Tokenizer converts words into vector space that can be processed by the model
-
-
-Take a look at the tokenizer's encoding and decoding
-
-
-Test the base LLM to summarize a dialogue without any prompting 
-(feed the dialogue without any instruction)
-	• The model is not sure what task is supposed to accomplish
-
-
-Next, try Zero Shot Inference with an instruction prompt
-	• To instruct the model to do a task, this case --> summarize a dialogue
-		○ Can convert the dialogue to an instruction prompt, wrapping the dialogue in a descriptive instruction
+predicting the next token is sometimes called  full language modeling by researchers
 
 
 
-Label vs Generation
---> Very different
+In training
+	• The model has no knowledge of the end of the sentence (unidirectional context)
+	• It masks the input sequence and can only see the input tokens leading up to the token in question
+	• It then iterates over the input sequence one by one to predict the following token.
+	• It learns to predict the next token from a vast number of examples, the model builds up a statistical representation of language.
 
-It is better
-but still did not pick up the nuance of the conversation
+Good use case
+	• Text generation
+	• Other emergent behavior (unseen situation)
+		○ Larger decoder-only models also show strong zero shot inference abilities
+
+Example model
+	• GPT
+	• BLOOM
+		
+
+ base on previous sequence of tokens
+
+
+Good use case
+( generally useful in cases where you have a body of texts as both input and output)
+	• Translation
+	• Text summarization
+	• Question answering
+
+Example models
+	• T5
+	• BART
+
+masks random sequences of input tokens
+
+then replaced by unique sentinel token that don't correspond to any word
