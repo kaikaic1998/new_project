@@ -1,117 +1,115 @@
 
-Self Attention (Attention Map)
-	• Illustrates attention weights between each word and every other word
-		○ Here, the word "book" is strongly connected (pay attention) to "teacher" and "student"
-	• The model can learn attention this way, significantly imp
-
-
-The model works with numbers, not actual words, so for the input
-	• First, tokenize the word (Converts words to number)
-		○ Each number representing a position in a dictionary of all the possible words that the model can work with
-		○ Must be same tokenizer for generating text as the tokenizer when training
-
-
-Embedding Layer
-	• It is a trainable vector embedding space, a high-dimensional space where each token is represented as a vector and occupies a unique location within that space.
-	• The intuition is that these vectors learn to encode the meaning and context of individual tokens in the input sequence
-
-
-Positional Encoding
-	• As adding the token vectors to the base of Encoder and Decoder
-		○ Add Positional Encoding (Model proccess the token vectors in parallel)
-		○ It preserve the "word position in the sentence" info
-
-
-Self-attention Layer
-	• Model analyzes the relationships between the tokens in your input sequence
-	• The self-attention weights that are learned during training and stored in these layers reflect the importance of each word in that input sequence to all other words in the sequence. 
-
-
-Encoder and Decoder (fully-connected feed forward network)
-	• All the attention weights are proccessed through fully-connected feed forward network
-	• The output of this layer is a vector of logits proportional to the probability score for each and every token in the tokenizer dictionary.
-
-
-Softmax Layer
-	• These vector of logits are passed to a final SoftMax layer
-		○ Normalized into a probability score for each word. 
-		○ This output includes a probability for every single word in the vocabulary, so there's likely to be thousands of scores here. 
-	• One single token will have a score higher than the rest. This is the most likely predicted token
 
 
 
-Can choose different tokenization method
-For example
-	1. Token IDs matching complete words
-	2. Token IDs represents parts of words
 
-Each token is mapped to a vector
-	• In the original transformer paper, the vector size is 512
 
-For example, a vector size of 3
-	• Plot the words in to 3D space, to see the relationships between words
-	• Distance between words (angle) allows model to mathematically understand words
+3 main classes of PEFT
 
 
 
-Multi-headed Self-attention
-	• Multiple sets of self-attention weights or heads are learned in parallel independently
-	• Number of attention heads varies in different model, commonly in range 12 -100
-	• The intuition here is that each self-attention head will learn a different aspect of language
-		○ For example, one head may see the relationship between the people entities in our sentence. Whilst another head may focus on the activity of the sentence. 
-	• The weights of each head are randomly initialized and given sufficient training data and time, each will learn different aspects of language.
 
+Not enough memory
 
+PEFT is less prone to catastrophic forgetting
 
-Autoencoding models build bidirectional representations of the input sequence
-	• Model understand the full context of the token, not just the word comes before
+With PEFT, you train only a small number of weights, which results in a much smaller footprint overall, as small as megabytes depending on the task. 
 
-Good use case 
-(ideally tasks that benefit by bidirectional context)
-	• Sentiment analysis
-	• Named entity recognition (extract information from text)
-	• Word classification
-Example model
-	• BERT
-	• ROBERTA
+Same size
 
-token in the sequence is randomly masked
+Different PEFT method
+	• each has  trade-offs
 
-denoising objective
+train only certain components of the model or specific layers, or even individual parameter types. 
 
-predicting the next token is sometimes called  full language modeling by researchers
+Researchers have found that the performance of these methods is mixed and there are significant trade-offs between parameter efficiency and compute efficiency. 
 
+work with the original LLM parameters, but reduce the number of parameters to train by creating new low rank transformations of the original network weights.
 
+ keep all of the original LLM weights frozen and introduce new trainable components.
 
-In training
-	• The model has no knowledge of the end of the sentence (unidirectional context)
-	• It masks the input sequence and can only see the input tokens leading up to the token in question
-	• It then iterates over the input sequence one by one to predict the following token.
-	• It learns to predict the next token from a vast number of examples, the model builds up a statistical representation of language.
-
-Good use case
-	• Text generation
-	• Other emergent behavior (unseen situation)
-		○ Larger decoder-only models also show strong zero shot inference abilities
-
-Example model
-	• GPT
-	• BLOOM
+2 methods
+	• Adapter
+		○ Add new trainable layers to the architecture of the model
+		○ Typically inside the encoder or decoder components after the attention or feed-forward layers
+	• Soft Prompts
+		○ Keep the model architecture fixed and frozen
+		○ Focus on manipulating the input to achieve better performance. This can be done by adding trainable parameters to the prompt embeddings or keeping the input fixed and retraining the embedding weights.
 		
+QLoRA:
+	• Combine LoRA with the quantization techniques
 
- base on previous sequence of tokens
 
 
-Good use case
-( generally useful in cases where you have a body of texts as both input and output)
-	• Translation
-	• Text summarization
-	• Question answering
 
-Example models
-	• T5
-	• BART
 
-masks random sequences of input tokens
 
-then replaced by unique sentinel token that don't correspond to any word
+
+
+
+
+
+
+
+
+There are 2 types of Neural Networks (Learn when train)
+	• Self-attention (majority of the learnable weights)
+	• Feed forward network
+
+inject a pair of rank decomposition matrices alongside the original weights
+	• The products has the same dimensions as the original weights
+	
+	
+	
+
+Because this model has the same number of parameters as the original, there is little to no impact on inference latency. 
+
+Researchers have found that applying LoRA to just the self-attention layers of the model is often enough to fine-tune for a task and achieve performance gains. 
+However, in principle, you can also use LoRA on other components like the feed-forward layers. But since most of the parameters of LLMs are in the attention layers, you get the biggest savings in trainable parameters by applying LoRA to these weights matrices. 
+
+Example
+
+	1. take the LoRA matrices you trained for this task
+	2. calculate their product
+	3. then add this matrix to the original weights and update the model
+
+still an active area of research
+
+The takeaway here is that ranks in the range of 4-32 can provide you with a good trade-off between reducing trainable parameters and preserving performance.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Soft Prompts are not fixed
+	• Can think of them as virtual tokens
+	• Through supervised learning, the model learns the values for these virtual tokens that maximize performance for a given task
+
+
+Natural language tokens have fixed location in vector space
+
+	1. Train a set of soft prompts for one task and a different set for another
+	2. Prepend your input prompt with the learned tokens
+	3. To another task, you simply change the soft prompt
+
+One potential issue to consider
+is the interpretability of learned virtual tokens
+
+because the soft prompt tokens can take any value within the continuous embedding vector space. 
+The trained tokens don't correspond to any known token, word, or phrase in the vocabulary of the LLM. 
+
+
+However, an analysis of the nearest neighbor tokens to the soft prompt location shows that they form tight semantic clusters. 
+
+In other words, the words closest to the soft prompt tokens have similar meanings. 
+
+The words identified usually have some meaning related to the task, suggesting that the prompts are learning word like representations. 
