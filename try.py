@@ -26,7 +26,7 @@ pipeline = transformers.pipeline(
 )
 
 sequences = pipeline(
-    'What is 10x23 equal to?\n',
+    'why does steak taste so good?\n',
 
     do_sample=True,
 
